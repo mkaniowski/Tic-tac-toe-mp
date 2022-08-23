@@ -1,0 +1,1 @@
+set DEBUG=tic-tac-toe-server:* & yarn start
