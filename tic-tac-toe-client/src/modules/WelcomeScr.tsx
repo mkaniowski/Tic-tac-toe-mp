@@ -1,23 +1,27 @@
 import React from "react";
 import { Wrapper, Btn, JoinForm, CreateMenu, LiPlayer, Lobby } from "./WelcomeScr.style";
 import { useFormik } from "formik"
+import joinRoom from "../services/joinRoom";
+import createRoom from "../services/createRoom";
 
-const WelcomeScr = () => {
+const WelcomeScr = (props: any): JSX.Element => {
 
     const [menu, setMenu] = React.useState(0)
-    const [username, setUsername] = React.useState("")
+    const [room, setRoom] = React.useState(0)
     const [readyP1, setReadyP1] = React.useState(false)
-    let id = 123456
-    let player2 = null
-    // let player2 = 'player2'
+    const [readyP2, setReadyP2] = React.useState(false)
 
     const formikJoin = useFormik({
         initialValues: {
             username: '',
-            roomID: ''
+            roomID: 0
         },
         onSubmit: (values) => {
-            console.log(values)
+            console.log("Submiting values (join): ", values)
+            joinRoom(props.socket, values.username, values.roomID, setMenu)
+            props.setPlayer1(values.username)
+            setRoom(values.roomID)
+            formikJoin.resetForm()
         }
     })
 
@@ -26,15 +30,16 @@ const WelcomeScr = () => {
             username: ''
         },
         onSubmit: (values) => {
-            console.log(values)
-            setMenu(3)
-            setUsername(values.username)
+            console.log("Submiting values (create): ", values)
+            createRoom(props.socket, values.username, setMenu, setRoom)
+            props.setPlayer1(values.username)
+            formikCreate.resetForm()
         }
     })
 
     return (
         <Wrapper>
-            <h1 onClick={ () => setMenu(0) }>
+            <h1 onClick={ () => { setMenu(0); props.socket.disconnect() } }>
                 Tic-tac-toe
             </h1>
             { menu === 0 ?
@@ -67,7 +72,7 @@ const WelcomeScr = () => {
                 ) : null }
 
             { menu === 2 ?
-                (<CreateMenu>
+                (<CreateMenu onSubmit={ formikCreate.handleSubmit }>
                     <label htmlFor="username">Username: </label>
                     <input
                         id="username"
@@ -76,7 +81,7 @@ const WelcomeScr = () => {
                         onChange={ formikCreate.handleChange }
                         value={ formikCreate.values.username }
                     />
-                    <Btn type="submit" onClick={ () => formikCreate.handleSubmit() }>Create</Btn>
+                    <Btn type="submit">Create</Btn>
                 </CreateMenu>
                 ) : null
             }
@@ -84,11 +89,11 @@ const WelcomeScr = () => {
             {
                 menu === 3 ?
                     (<Lobby>
-                        <h2>Your room id: { id }</h2>
+                        <h2>Your room id: { room }</h2>
                         <ul>
-                            <LiPlayer ready={ readyP1 }>{ username }</LiPlayer>
-                            { player2 ?
-                                <LiPlayer ready={ false }>Player2</LiPlayer> :
+                            <LiPlayer ready={ readyP1 }>{ props.player1 }</LiPlayer>
+                            { props.player2 ?
+                                <LiPlayer ready={ false }>{ props.player2 }</LiPlayer> :
                                 <LiPlayer ready={ false }>Waiting for player<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span>
                                 </LiPlayer>
                             }
@@ -97,7 +102,7 @@ const WelcomeScr = () => {
                     </Lobby>
                     ) : null
             }
-
+            <button onClick={ () => props.socket.emit("get-rooms") }>Get Rooms</button>
         </Wrapper >
     )
 }
