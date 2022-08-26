@@ -98,9 +98,9 @@ const socketServer = (httpServer: any) => {
             if (rooms.get(roomID) == null) { // if room does not exist
                 console.log("Room", roomID, "not found!")
             } else if (rooms.get(roomID) <= 1) { // room exists and it's not full
-                console.log(username, id, "joined room", roomID)
                 socket.join(roomID)
-                socket.in(roomID).emit("user-join", username, id, " joined room ", roomID)
+                console.log(username, id, "joined room", roomID)
+                socket.to(roomID).emit("user-join", username, roomID)
             } else { // room is full
                 console.log("Room", roomID, "is full!")
             }
@@ -109,27 +109,34 @@ const socketServer = (httpServer: any) => {
         /**
          * Creates an empty room with random roomID that does not exists
          */
-        socket.on("create-room", (userID: string, username?: string) => {
+        socket.on("create-room", (callback: Function) => {
             let tempID = getRandID();
             while (rooms.get(tempID) != null) {
                 tempID = getRandID();
             }
             rooms.set(tempID, 0)
-            socket.emit("room-id", tempID)
+            callback(tempID)
             console.log("Created room", tempID)
         })
 
-        socket.on("get-users-room", (roomID: any) => {
+        socket.on("get-users-room", (roomID: any, username: String, callback: Function) => {
             let users: Array<any> = []
             if (io.sockets.adapter.rooms.get(roomID) != null) {
+                if (username != null) { users.push(username) }
                 io.sockets.adapter.rooms.get(roomID)?.forEach(user => {
-                    users.push(usernames.get(user))
+                    if (usernames.get(user) != username) {
+                        users.push(usernames.get(user))
+                    }
                 })
 
                 console.log("users-room", users)
-                socket.emit("users-room", users)
+                callback(users)
             }
 
+        })
+
+        socket.on("ready", (roomID: Number, username: String) => {
+            socket.to(roomID).emit("ready", username)
         })
 
         /**

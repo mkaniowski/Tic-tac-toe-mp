@@ -8,8 +8,6 @@ const WelcomeScr = (props: any): JSX.Element => {
 
     const [menu, setMenu] = React.useState(0)
     const [room, setRoom] = React.useState(0)
-    const [readyP1, setReadyP1] = React.useState(false)
-    const [readyP2, setReadyP2] = React.useState(false)
 
     const formikJoin = useFormik({
         initialValues: {
@@ -18,8 +16,7 @@ const WelcomeScr = (props: any): JSX.Element => {
         },
         onSubmit: (values) => {
             console.log("Submiting values (join): ", values)
-            joinRoom(props.socket, values.username, values.roomID, setMenu)
-            props.setPlayer1(values.username)
+            joinRoom(props.socket, values.username, values.roomID, setMenu, props.setPlayers, props.setSocket)
             setRoom(values.roomID)
             formikJoin.resetForm()
         }
@@ -31,8 +28,11 @@ const WelcomeScr = (props: any): JSX.Element => {
         },
         onSubmit: (values) => {
             console.log("Submiting values (create): ", values)
-            createRoom(props.socket, values.username, setMenu, setRoom)
-            props.setPlayer1(values.username)
+            createRoom(props.socket, values.username, setMenu, setRoom, props.setSocket)
+            props.setPlayers((prev: any) => ({
+                ...prev,
+                player1: values.username
+            }))
             formikCreate.resetForm()
         }
     })
@@ -91,18 +91,19 @@ const WelcomeScr = (props: any): JSX.Element => {
                     (<Lobby>
                         <h2>Your room id: { room }</h2>
                         <ul>
-                            <LiPlayer ready={ readyP1 }>{ props.player1 }</LiPlayer>
-                            { props.player2 ?
-                                <LiPlayer ready={ false }>{ props.player2 }</LiPlayer> :
-                                <LiPlayer ready={ false }>Waiting for player<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span>
+                            <LiPlayer ready={ props.readyP1 }>{ props.players.player1 }</LiPlayer>
+                            { props.players.player2 ?
+                                <LiPlayer ready={ props.readyP2 }>{ props.players.player2 }</LiPlayer> :
+                                <LiPlayer ready={ props.readyP2 }>Waiting for player<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span>
                                 </LiPlayer>
                             }
                         </ul>
-                        <Btn onClick={ () => setReadyP1(!readyP1) }>Ready</Btn>
+                        <Btn onClick={ () => { props.setReadyP1(!props.readyP1); props.socket.emit("ready", room, props.players.player1) } }>Ready</Btn>
                     </Lobby>
                     ) : null
             }
-            <button onClick={ () => props.socket.emit("get-rooms") }>Get Rooms</button>
+            {/* <button onClick={ () => props.socket.emit("get-rooms") }>Get Rooms</button> */ }
+            {/* <button onClick={ () => { props.socket.emit("chuj", room, props.players.player1); console.log(props.socket) } }>Ready2</button> */ }
         </Wrapper >
     )
 }
