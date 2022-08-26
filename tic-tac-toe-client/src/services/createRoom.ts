@@ -8,8 +8,19 @@ const createRoom = (socket: any, username: string, next: Function, setRoomID: Fu
         socket.emit("create-room", (res: number) => {
             console.log("Created room:", res)
             setRoomID(res)
-            socket.emit("join-room", socket.id, socket.auth.username, res)
-            next(3)
+            socket.emit("join-room", socket.id, socket.auth.username, res, (response: any) => {
+                // console.log(response)
+                if (response == "ok") {
+                    next(3)
+                    console.log("Successfully joined room", res)
+                } else if (response == "full") {
+                    console.log("Room", res, "is full")
+                } else if (response == "not_found") {
+                    console.log("Room", res, "is not found")
+                } else {
+                    console.log("Failed to join room", res)
+                }
+            })
         })
     });
 }

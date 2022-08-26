@@ -62,6 +62,13 @@ function App(): JSX.Element {
       }))
     });
 
+    socket.on('user-leave', (username: string, roomID: Number) => {
+      setPlayers(prev => ({
+        ...prev,
+        player2: ''
+      }))
+    });
+
     socket.on('users-room', (users: Array<any>) => {
       console.log(users[0], users[1])
       setPlayer1(users[0])

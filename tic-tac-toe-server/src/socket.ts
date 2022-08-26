@@ -70,6 +70,7 @@ const socketServer = (httpServer: any) => {
          */
         socket.on("disconnecting", () => {
             socket.rooms.forEach((room: any) => {
+                socket.to(room).emit("user-leave", usernames.get(socket.id), room)
                 socket.leave(room)
                 let val = rooms.get(room)
                 if (val != null && val != 1) { // if room exists and it's not empty, update player count
@@ -89,20 +90,21 @@ const socketServer = (httpServer: any) => {
         /**
          * While user tries to join a room, check if the room exists and it's not full
          */
-        socket.on("join-room", (id: string, username: string, roomID: number) => {
+        socket.on("join-room", (id: string, username: string, roomID: number, callback: Function) => {
             if (usernames.get(id) == null) {
                 usernames.set(id, username)
             }
-
-
             if (rooms.get(roomID) == null) { // if room does not exist
                 console.log("Room", roomID, "not found!")
+                callback("not_found")
             } else if (rooms.get(roomID) <= 1) { // room exists and it's not full
                 socket.join(roomID)
                 console.log(username, id, "joined room", roomID)
                 socket.to(roomID).emit("user-join", username, roomID)
+                callback("ok")
             } else { // room is full
                 console.log("Room", roomID, "is full!")
+                callback("full")
             }
         })
 
