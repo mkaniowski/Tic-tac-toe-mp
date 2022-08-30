@@ -1,3 +1,9 @@
+import { toast } from 'react-toastify';
+type Player = {
+    id: String;
+    name: String;
+}
+
 const joinRoom = (socket: any, username: string, room: number, next: Function, setPlayers: Function, setSocket: Function) => {
     socket.auth = { username }
     socket.connect()
@@ -9,6 +15,7 @@ const joinRoom = (socket: any, username: string, room: number, next: Function, s
             // console.log(res)
             if (res == "ok") {
                 next(3)
+                toast.success("Successfully joined room!")
                 console.log("Successfully joined room", room)
             } else if (res == "full") {
                 console.log("Room", room, "is full")
@@ -18,11 +25,11 @@ const joinRoom = (socket: any, username: string, room: number, next: Function, s
                 console.log("Failed to join room", room)
             }
         })
-        socket.emit("get-users-room", room, username, (res: Array<string>) => {
+        socket.emit("get-users-room", room, username, (res: Array<Player>) => {
             console.log("joinRoom get-users-room", res)
             setPlayers({
-                player1: res[0],
-                player2: res[1]
+                player1: res[0].name,
+                player2: res[1].name
             })
         })
     });

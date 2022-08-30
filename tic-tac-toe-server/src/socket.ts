@@ -1,5 +1,6 @@
 import { Server } from "socket.io"
 import { instrument } from "@socket.io/admin-ui";
+import _ from "lodash"
 require('dotenv').config()
 
 interface ServerToClientEvents {
@@ -21,8 +22,15 @@ interface SocketData {
     age: number;
 }
 
-type Rooms = {
+type Room = {
+    amount: number;
+    players: Array<Player>
+    ready: Array<boolean>;
+}
 
+type Player = {
+    id: String;
+    name: String;
 }
 
 
@@ -70,41 +78,56 @@ const socketServer = (httpServer: any) => {
          */
         socket.on("disconnecting", () => {
             socket.rooms.forEach((room: any) => {
-                socket.to(room).emit("user-leave", usernames.get(socket.id), room)
-                socket.leave(room)
                 let val = rooms.get(room)
-                if (val != null && val != 1) { // if room exists and it's not empty, update player count
-                    rooms.set(room, val - 1)
+                if (val !== undefined && val.amount > 1) { // if room exists and it's not empty, update player count
+                    val.amount--
+                    let playersFiltered = val.players.filter((p: Player, idx: number) => {
+                        if (!_.isEqual(p, { id: socket.id, name: usernames.get(socket.id) })) {
+                            return p
+                        }
+                    })
+                    val.players = playersFiltered
+                    val.ready = [false, false]
+                    rooms.set(room, val)
+                    socket.to(room).emit("user-leave", val.players)
+                    socket.leave(room)
+                    console.log(usernames.get(socket.id), "left room", room)
                 }
-                if (rooms.get(room) == 0) { // if room is empty - delete
+                else if (val !== undefined && val.amount == 0) { // if room is empty - delete
                     console.log(room, "is emtpy! Deleting a room...")
                     rooms.delete(room)
                 }
             })
         })
 
-        socket.onAny((event: any, ...args: any) => {
-            console.log(event, args);
-        });
-
         /**
          * While user tries to join a room, check if the room exists and it's not full
          */
         socket.on("join-room", (id: string, username: string, roomID: number, callback: Function) => {
-            if (usernames.get(id) == null) {
+            if (usernames.get(id) === undefined) {
                 usernames.set(id, username)
             }
-            if (rooms.get(roomID) == null) { // if room does not exist
+            let room: Room = rooms.get(roomID)
+            if (room === undefined) { // if room does not exist
                 console.log("Room", roomID, "not found!")
                 callback("not_found")
-            } else if (rooms.get(roomID) <= 1) { // room exists and it's not full
+
+            } else if (room.amount <= 1) { // room exists and it's not full
                 socket.join(roomID)
                 console.log(username, id, "joined room", roomID)
                 socket.to(roomID).emit("user-join", username, roomID)
+                room.amount++
+                room.players.push({ id: id, name: username })
+                rooms.set(roomID, room)
                 callback("ok")
-            } else { // room is full
+
+            } else if (room.amount >= 2) { // room is full
                 console.log("Room", roomID, "is full!")
                 callback("full")
+
+            } else {
+                console.log("Room", roomID, "- unexpected error!")
+                callback("error")
             }
         })
 
@@ -113,32 +136,35 @@ const socketServer = (httpServer: any) => {
          */
         socket.on("create-room", (callback: Function) => {
             let tempID = getRandID();
-            while (rooms.get(tempID) != null) {
+            while (rooms.get(tempID) !== undefined) {
                 tempID = getRandID();
             }
-            rooms.set(tempID, 0)
+            rooms.set(tempID, {
+                amount: 0,
+                players: [],
+                ready: [false, false]
+            })
             callback(tempID)
             console.log("Created room", tempID)
         })
 
         socket.on("get-users-room", (roomID: any, username: String, callback: Function) => {
-            let users: Array<any> = []
-            if (io.sockets.adapter.rooms.get(roomID) != null) {
-                if (username != null) { users.push(username) }
-                io.sockets.adapter.rooms.get(roomID)?.forEach(user => {
-                    if (usernames.get(user) != username) {
-                        users.push(usernames.get(user))
-                    }
-                })
-
-                console.log("users-room", users)
-                callback(users)
+            let room = rooms.get(roomID)
+            if (room !== undefined) {
+                callback(room.players)
             }
 
         })
 
-        socket.on("ready", (roomID: Number, username: String) => {
-            socket.to(roomID).emit("ready", username)
+        socket.on("ready", (roomID: Number, callback: Function) => {
+            let room = rooms.get(roomID)
+            let arrID = room.players.findIndex((ele: Player) => _.isEqual(ele, { id: socket.id, name: usernames.get(socket.id) }))
+            if (arrID !== undefined) {
+                room.ready[arrID] = !room.ready[arrID]
+                rooms.set(roomID, room)
+                socket.to(roomID).emit("ready", room.ready)
+                callback(room.ready)
+            }
         })
 
         /**
@@ -155,6 +181,11 @@ const socketServer = (httpServer: any) => {
             //     console.log("key ", key)
             //     console.log(rooms.get('a'))
             // })
+        })
+
+        socket.on("get-rooms-obj", (callback: Function) => {
+            console.log(rooms)
+            callback(Array.from(rooms))
         })
 
         socket.on("delete-rooms", () => {

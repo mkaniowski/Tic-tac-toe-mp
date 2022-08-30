@@ -3,6 +3,8 @@ import './App.css';
 import socketClient from "./services/socketClient";
 import WelcomeScr from "./modules/WelcomeScr";
 import GlobalCSS from './global.css'
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface WelcomeScr {
   socket: object
@@ -21,17 +23,18 @@ type Socket = {
   once?: any
 };
 
+type Player = {
+  id: String;
+  name: string;
+}
+
 function App(): JSX.Element {
-  const [player1, setPlayer1] = React.useState('')
-  const [player2, setPlayer2] = React.useState('')
   const [players, setPlayers] = React.useState({
     player1: '',
     player2: ''
   })
-  const [readyP1, setReadyP1] = React.useState(false)
-  const [readyP2, setReadyP2] = React.useState(false)
+  const [ready, setReady] = React.useState([false, false])
   const [socket, setSocket]: [Socket, Function] = React.useState(socketClient)
-  const counter = React.useRef(0);
 
   React.useEffect(() => {
 
@@ -48,6 +51,11 @@ function App(): JSX.Element {
     });
 
     socket.on('disconnect', () => {
+      setPlayers({
+        player1: '',
+        player2: ''
+      })
+      setReady([false, false])
       console.log('Disconnected from server')
     });
 
@@ -62,24 +70,16 @@ function App(): JSX.Element {
       }))
     });
 
-    socket.on('user-leave', (username: string, roomID: Number) => {
-      setPlayers(prev => ({
-        ...prev,
+    socket.on('user-leave', (playerList: Array<Player>) => {
+      setPlayers({
+        player1: playerList[0].name,
         player2: ''
-      }))
+      })
+      setReady([false, false])
     });
 
-    socket.on('users-room', (users: Array<any>) => {
-      console.log(users[0], users[1])
-      setPlayer1(users[0])
-      setPlayer2(users[1])
-    })
-
-    socket.on('ready', (user: String) => {
-      counter.current++ // socket emits twice the same event so I had to "cut it in half"
-      if (counter.current % 2 == 0) {
-        setReadyP2(current => !current)
-      }
+    socket.on('ready', (readyArr: Array<boolean>) => {
+      setReady(readyArr)
     })
 
     // socket.onAny((event: any, ...args: any) => {
@@ -93,7 +93,18 @@ function App(): JSX.Element {
   return (
     <>
       <GlobalCSS />
-      <WelcomeScr socket={ socket } player1={ player1 } player2={ player2 } setPlayer1={ setPlayer1 } readyP1={ readyP1 } readyP2={ readyP2 } setReadyP1={ setReadyP1 } setReadyP2={ setReadyP2 } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } />
+      <WelcomeScr socket={ socket } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } ready={ ready } setReady={ setReady } />
+      <ToastContainer
+        position="bottom-left"
+        autoClose={ 5000 }
+        hideProgressBar={ false }
+        newestOnTop
+        closeOnClick
+        rtl={ false }
+        pauseOnFocusLoss={ false }
+        draggable
+        pauseOnHover={ false }
+      />
     </>
   );
 }

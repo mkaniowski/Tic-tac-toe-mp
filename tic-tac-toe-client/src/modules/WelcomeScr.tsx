@@ -3,6 +3,7 @@ import { Wrapper, Btn, JoinForm, CreateMenu, LiPlayer, Lobby } from "./WelcomeSc
 import { useFormik } from "formik"
 import joinRoom from "../services/joinRoom";
 import createRoom from "../services/createRoom";
+import { toast } from 'react-toastify';
 
 const WelcomeScr = (props: any): JSX.Element => {
 
@@ -91,19 +92,20 @@ const WelcomeScr = (props: any): JSX.Element => {
                     (<Lobby>
                         <h2>Your room id: { room }</h2>
                         <ul>
-                            <LiPlayer ready={ props.readyP1 }>{ props.players.player1 }</LiPlayer>
+                            <LiPlayer ready={ props.ready[0] }>{ props.players.player1 }</LiPlayer>
                             { props.players.player2 ?
-                                <LiPlayer ready={ props.readyP2 }>{ props.players.player2 }</LiPlayer> :
-                                <LiPlayer ready={ props.readyP2 }>Waiting for player<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span>
+                                <LiPlayer ready={ props.ready[1] }>{ props.players.player2 }</LiPlayer> :
+                                <LiPlayer ready={ false }>Waiting for player<span className="dot">.</span><span className="dot">.</span><span className="dot">.</span>
                                 </LiPlayer>
                             }
                         </ul>
-                        <Btn onClick={ () => { props.setReadyP1(!props.readyP1); props.socket.emit("ready", room, props.players.player1) } }>Ready</Btn>
+                        <Btn onClick={ () => { props.socket.emit("ready", room, (res: Array<boolean>) => { props.setReady(res) }) } }>Ready</Btn>
                     </Lobby>
                     ) : null
             }
             {/* <button onClick={ () => props.socket.emit("get-rooms") }>Get Rooms</button> */ }
-            {/* <button onClick={ () => { props.socket.emit("chuj", room, props.players.player1); console.log(props.socket) } }>Ready2</button> */ }
+            {/* <button onClick={ () => { toast("test") } }>Notifi</button> */ }
+            {/* <button onClick={ () => { props.socket.emit("get-rooms-obj", (res: any) => console.log(res)) } }>Rooms obj</button> */ }
         </Wrapper >
     )
 }
