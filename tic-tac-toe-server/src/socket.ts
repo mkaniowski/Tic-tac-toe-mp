@@ -167,6 +167,13 @@ const socketServer = (httpServer: any) => {
             }
         })
 
+        socket.once("startup", (roomID: Number, callback: Function) => {
+            let room = rooms.get(roomID)
+            console.log(roomID, "preparing to start")
+            socket.to(roomID).emit("startup", (room.ready[0] && room.ready[1]))
+            callback(room.ready[0] && room.ready[1])
+        })
+
         /**
          * DEBUG
          */

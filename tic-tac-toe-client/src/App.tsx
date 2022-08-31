@@ -4,6 +4,7 @@ import socketClient from "./services/socketClient";
 import WelcomeScr from "./modules/WelcomeScr";
 import GlobalCSS from './global.css'
 import { ToastContainer } from 'react-toastify';
+import { useCountdown } from './services/useCountdown';
 import 'react-toastify/dist/ReactToastify.css';
 
 interface WelcomeScr {
@@ -35,6 +36,8 @@ function App(): JSX.Element {
   })
   const [ready, setReady] = React.useState([false, false])
   const [socket, setSocket]: [Socket, Function] = React.useState(socketClient)
+  const [creator, setCreator] = React.useState(false)
+  const [showCountdown, setShowCountdown] = React.useState(false)
 
   React.useEffect(() => {
 
@@ -56,6 +59,7 @@ function App(): JSX.Element {
         player2: ''
       })
       setReady([false, false])
+      setCreator(false)
       console.log('Disconnected from server')
     });
 
@@ -82,6 +86,10 @@ function App(): JSX.Element {
       setReady(readyArr)
     })
 
+    socket.on('startup', (sw: boolean) => {
+      setShowCountdown(sw)
+    })
+
     // socket.onAny((event: any, ...args: any) => {
     //   console.log("onAny", event, args);
     // });
@@ -93,7 +101,7 @@ function App(): JSX.Element {
   return (
     <>
       <GlobalCSS />
-      <WelcomeScr socket={ socket } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } ready={ ready } setReady={ setReady } />
+      <WelcomeScr socket={ socket } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } ready={ ready } setReady={ setReady } setCreator={ setCreator } creator={ creator } setShowCountdown={ setShowCountdown } showCountdown={ showCountdown } />
       <ToastContainer
         position="bottom-left"
         autoClose={ 5000 }

@@ -4,6 +4,8 @@ import { useFormik } from "formik"
 import joinRoom from "../services/joinRoom";
 import createRoom from "../services/createRoom";
 import { toast } from 'react-toastify';
+import { useCountdown } from "../services/useCountdown";
+import Countdown from "./Countdown";
 
 const WelcomeScr = (props: any): JSX.Element => {
 
@@ -29,7 +31,7 @@ const WelcomeScr = (props: any): JSX.Element => {
         },
         onSubmit: (values) => {
             console.log("Submiting values (create): ", values)
-            createRoom(props.socket, values.username, setMenu, setRoom, props.setSocket)
+            createRoom(props.socket, values.username, setMenu, setRoom, props.setSocket, props.setCreator)
             props.setPlayers((prev: any) => ({
                 ...prev,
                 player1: values.username
@@ -99,13 +101,18 @@ const WelcomeScr = (props: any): JSX.Element => {
                                 </LiPlayer>
                             }
                         </ul>
-                        <Btn onClick={ () => { props.socket.emit("ready", room, (res: Array<boolean>) => { props.setReady(res) }) } }>Ready</Btn>
+                        { props.showCountdown ? <Countdown socket={ props.socket } room={ room } /> :
+                            <span><Btn onClick={ () => { props.socket.emit("ready", room, (res: Array<boolean>) => { props.setReady(res) }) } }>Ready</Btn>
+                                { props.ready[0] && props.ready[1] && props.creator ?
+                                    <Btn onClick={ () => { props.socket.emit("startup", room, (res: any) => { props.setShowCountdown(res) }) } }>Start</Btn>
+                                    : null }</span> }
                     </Lobby>
                     ) : null
             }
             {/* <button onClick={ () => props.socket.emit("get-rooms") }>Get Rooms</button> */ }
             {/* <button onClick={ () => { toast("test") } }>Notifi</button> */ }
             {/* <button onClick={ () => { props.socket.emit("get-rooms-obj", (res: any) => console.log(res)) } }>Rooms obj</button> */ }
+            <button onClick={ () => { props.setShowCountdown(true) } }>countdown</button>
         </Wrapper >
     )
 }

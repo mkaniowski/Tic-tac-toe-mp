@@ -1,4 +1,4 @@
-const createRoom = (socket: any, username: string, next: Function, setRoomID: Function, setSocket: Function) => {
+const createRoom = (socket: any, username: string, next: Function, setRoomID: Function, setSocket: Function, setCreator: Function) => {
     socket.auth = { username }
     socket.connect()
     // console.log("PRE createRoom values: ", socket.id, socket.auth.username)
@@ -8,6 +8,7 @@ const createRoom = (socket: any, username: string, next: Function, setRoomID: Fu
         socket.emit("create-room", (res: number) => {
             console.log("Created room:", res)
             setRoomID(res)
+            setCreator(true)
             socket.emit("join-room", socket.id, socket.auth.username, res, (response: any) => {
                 // console.log(response)
                 if (response == "ok") {
