@@ -11,12 +11,12 @@ const createRoom = (socket: any, username: string, next: Function, setRoomID: Fu
             setCreator(true)
             socket.emit("join-room", socket.id, socket.auth.username, res, (response: any) => {
                 // console.log(response)
-                if (response == "ok") {
+                if (response === "ok") {
                     next(3)
                     console.log("Successfully joined room", res)
-                } else if (response == "full") {
+                } else if (response === "full") {
                     console.log("Room", res, "is full")
-                } else if (response == "not_found") {
+                } else if (response === "not_found") {
                     console.log("Room", res, "is not found")
                 } else {
                     console.log("Failed to join room", res)

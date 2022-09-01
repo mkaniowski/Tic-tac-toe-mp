@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import socketClient from "./services/socketClient";
 import WelcomeScr from "./modules/WelcomeScr";
@@ -30,14 +30,15 @@ type Player = {
 }
 
 function App(): JSX.Element {
-  const [players, setPlayers] = React.useState({
+  const [players, setPlayers] = useState({
     player1: '',
     player2: ''
   })
-  const [ready, setReady] = React.useState([false, false])
-  const [socket, setSocket]: [Socket, Function] = React.useState(socketClient)
+  const [ready, setReady] = useState([false, false])
+  const [socket, setSocket]: [Socket, Function] = useState(socketClient)
   const [creator, setCreator] = React.useState(false)
-  const [showCountdown, setShowCountdown] = React.useState(false)
+  const [showCountdown, setShowCountdown] = useState(false)
+  const [turn, setTurn] = useState(false)
 
   React.useEffect(() => {
 
@@ -80,14 +81,16 @@ function App(): JSX.Element {
         player2: ''
       })
       setReady([false, false])
+      setShowCountdown(false)
     });
 
     socket.on('ready', (readyArr: Array<boolean>) => {
       setReady(readyArr)
     })
 
-    socket.on('startup', (sw: boolean) => {
+    socket.on('startup', (sw: boolean, side: boolean) => {
       setShowCountdown(sw)
+      setTurn(side)
     })
 
     // socket.onAny((event: any, ...args: any) => {
@@ -101,7 +104,7 @@ function App(): JSX.Element {
   return (
     <>
       <GlobalCSS />
-      <WelcomeScr socket={ socket } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } ready={ ready } setReady={ setReady } setCreator={ setCreator } creator={ creator } setShowCountdown={ setShowCountdown } showCountdown={ showCountdown } />
+      <WelcomeScr socket={ socket } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } ready={ ready } setReady={ setReady } setCreator={ setCreator } creator={ creator } setShowCountdown={ setShowCountdown } showCountdown={ showCountdown } setTurn={ setTurn } turn={ turn } />
       <ToastContainer
         position="bottom-left"
         autoClose={ 5000 }

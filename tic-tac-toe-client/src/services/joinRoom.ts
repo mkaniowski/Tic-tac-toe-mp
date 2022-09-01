@@ -13,13 +13,13 @@ const joinRoom = (socket: any, username: string, room: number, next: Function, s
         console.log("joinRoom values: ", socket.id, socket.auth.username, room)
         socket.emit("join-room", socket.id, socket.auth.username, room, (res: any) => {
             // console.log(res)
-            if (res == "ok") {
+            if (res === "ok") {
                 next(3)
                 toast.success("Successfully joined room!")
                 console.log("Successfully joined room", room)
-            } else if (res == "full") {
+            } else if (res === "full") {
                 console.log("Room", room, "is full")
-            } else if (res == "not_found") {
+            } else if (res === "not_found") {
                 console.log("Room", room, "is not found")
             } else {
                 console.log("Failed to join room", room)

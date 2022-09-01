@@ -93,7 +93,7 @@ const socketServer = (httpServer: any) => {
                     socket.leave(room)
                     console.log(usernames.get(socket.id), "left room", room)
                 }
-                else if (val !== undefined && val.amount == 0) { // if room is empty - delete
+                else if (val !== undefined && val.amount === 0) { // if room is empty - delete
                     console.log(room, "is emtpy! Deleting a room...")
                     rooms.delete(room)
                 }
@@ -167,11 +167,23 @@ const socketServer = (httpServer: any) => {
             }
         })
 
-        socket.once("startup", (roomID: Number, callback: Function) => {
+        socket.on("startup", (roomID: Number, callback: Function) => {
             let room = rooms.get(roomID)
+            let side = Math.floor(Math.random() * 2)
             console.log(roomID, "preparing to start")
-            socket.to(roomID).emit("startup", (room.ready[0] && room.ready[1]))
-            callback(room.ready[0] && room.ready[1])
+            socket.to(roomID).emit("startup", (room.ready[0] && room.ready[1]), !side)
+            callback(room.ready[0] && room.ready[1], !!side)
+        })
+
+        socket.on("start", (roomID: Number, callback: Function) => {
+            let room = rooms.get(roomID)
+            if (room.amount === 2 && room.players.length === 2 && room.ready[0] && room.ready[1]) {
+                console.log(roomID, "starting")
+                callback("ok")
+            } else {
+                console.log(roomID, socket.id, "ERROR", room.amount === 2, room.players.length === 2, room.ready[0], room.ready[1])
+                callback(["error", room])
+            }
         })
 
         /**
@@ -183,11 +195,6 @@ const socketServer = (httpServer: any) => {
          */
         socket.on("get-rooms", () => {
             console.log(io.sockets.adapter.rooms)
-            // io.sockets.adapter.rooms.forEach((value, key) => {
-            //     console.log("val ", value)
-            //     console.log("key ", key)
-            //     console.log(rooms.get('a'))
-            // })
         })
 
         socket.on("get-rooms-obj", (callback: Function) => {

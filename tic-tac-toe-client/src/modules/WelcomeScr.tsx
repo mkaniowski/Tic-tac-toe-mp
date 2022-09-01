@@ -6,6 +6,7 @@ import createRoom from "../services/createRoom";
 import { toast } from 'react-toastify';
 import { useCountdown } from "../services/useCountdown";
 import Countdown from "./Countdown";
+import GameBoard from "./GameBoard";
 
 const WelcomeScr = (props: any): JSX.Element => {
 
@@ -101,18 +102,30 @@ const WelcomeScr = (props: any): JSX.Element => {
                                 </LiPlayer>
                             }
                         </ul>
-                        { props.showCountdown ? <Countdown socket={ props.socket } room={ room } /> :
-                            <span><Btn onClick={ () => { props.socket.emit("ready", room, (res: Array<boolean>) => { props.setReady(res) }) } }>Ready</Btn>
+                        { props.showCountdown ? <Countdown socket={ props.socket } room={ room } ready={ props.ready } setMenu={ setMenu } /> :
+                            <span><Btn onClick={ () => {
+                                props.socket.emit("ready", room, (res: Array<boolean>) => {
+                                    props.setReady(res)
+                                })
+                            } }>Ready</Btn>
                                 { props.ready[0] && props.ready[1] && props.creator ?
-                                    <Btn onClick={ () => { props.socket.emit("startup", room, (res: any) => { props.setShowCountdown(res) }) } }>Start</Btn>
+                                    <Btn onClick={ () => {
+                                        props.socket.emit("startup", room, (res: any) => {
+                                            props.setShowCountdown(res)
+                                            props.setTurn(res)
+                                        })
+                                    } }>Start</Btn>
                                     : null }</span> }
                     </Lobby>
                     ) : null
             }
+            {
+                menu === 4 ? (<GameBoard socket={ props.socket } room={ room } turn={ props.turn } setMenu={ setMenu } players={ props.players } />) : null
+            }
             {/* <button onClick={ () => props.socket.emit("get-rooms") }>Get Rooms</button> */ }
             {/* <button onClick={ () => { toast("test") } }>Notifi</button> */ }
             {/* <button onClick={ () => { props.socket.emit("get-rooms-obj", (res: any) => console.log(res)) } }>Rooms obj</button> */ }
-            <button onClick={ () => { props.setShowCountdown(true) } }>countdown</button>
+            {/* <button onClick={ () => { props.setShowCountdown(true) } }>countdown</button> */ }
         </Wrapper >
     )
 }

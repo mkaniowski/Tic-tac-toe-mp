@@ -10,8 +10,8 @@ const useCountdown = (timer: number) => {
     useEffect(() => {
         const interval = setInterval(() => {
             let tmp = (countDownDate - new Date().getTime()) / 1000
-            if (tmp < -1) {
-                tmp = -1
+            if (tmp < -10) {
+                tmp = -10
             }
             setDiff(Math.ceil(tmp))
         }, 1000);
