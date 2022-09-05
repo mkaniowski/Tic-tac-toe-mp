@@ -31,8 +31,8 @@ type Player = {
 
 function App(): JSX.Element {
   const [players, setPlayers] = useState({
-    player1: '',
-    player2: ''
+    player1: 'player1',
+    player2: 'player2'
   })
   const [ready, setReady] = useState([false, false])
   const [socket, setSocket]: [Socket, Function] = useState(socketClient)

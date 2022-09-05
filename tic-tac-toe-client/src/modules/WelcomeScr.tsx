@@ -3,15 +3,13 @@ import { Wrapper, Btn, JoinForm, CreateMenu, LiPlayer, Lobby } from "./WelcomeSc
 import { useFormik } from "formik"
 import joinRoom from "../services/joinRoom";
 import createRoom from "../services/createRoom";
-import { toast } from 'react-toastify';
-import { useCountdown } from "../services/useCountdown";
 import Countdown from "./Countdown";
 import GameBoard from "./GameBoard";
 
 const WelcomeScr = (props: any): JSX.Element => {
 
-    const [menu, setMenu] = React.useState(0)
-    const [room, setRoom] = React.useState(0)
+    const [menu, setMenu] = React.useState(4)
+    const [room, setRoom] = React.useState(123456)
 
     const formikJoin = useFormik({
         initialValues: {
