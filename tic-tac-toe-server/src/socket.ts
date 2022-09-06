@@ -22,15 +22,65 @@ interface SocketData {
     age: number;
 }
 
-type Room = {
-    amount: number;
-    players: Array<Player>
-    ready: Array<boolean>;
-}
-
 type Player = {
     id: String;
     name: String;
+}
+
+class Room {
+    amount: number;
+    players: Array<Player>
+    ready_: Array<boolean>
+    board: Array<Array<String>>
+    score: Array<number>
+    turn: String
+
+
+    constructor() {
+        this.amount = 0
+        this.players = []
+        this.ready_ = [false, false]
+        this.board = [['', '', ''], ['', '', ''], ['', '', '']]
+        this.turn = 'o'
+        this.score = [0, 0]
+    }
+
+    join(id: String, name: String) {
+        if (this.amount <= 1) {
+            this.amount++
+            this.players.push({ id: id, name: name })
+        }
+    }
+
+    leave(id: String, name: String) {
+        this.ready_ = [false, false]
+        this.amount--
+        this.players = this.players.filter((p: Player, idx: number) => {
+            if (!_.isEqual(p, { id: id, name: name })) {
+                return p
+            }
+        })
+        console.log("leave", this.players)
+    }
+
+    ready(id: String, name: String) {
+        let arrID = this.players?.findIndex((ele: Player) => _.isEqual(ele, { id: id, name: name }))
+        if (arrID !== undefined) {
+            this.ready_[arrID] = !this.ready_[arrID]
+        }
+    }
+
+    get getReady() {
+        return this.ready_[0] && this.ready_[1]
+    }
+
+    place(sign: String, row: number, col: number) {
+        if (this.turn === sign) {
+            this.board[row][col] = sign
+            if (sign === 'o') { this.turn = 'x' } else { this.turn = 'o' }
+        }
+
+    }
 }
 
 
@@ -80,15 +130,7 @@ const socketServer = (httpServer: any) => {
             socket.rooms.forEach((room: any) => {
                 let val = rooms.get(room)
                 if (val !== undefined && val.amount > 1) { // if room exists and it's not empty, update player count
-                    val.amount--
-                    let playersFiltered = val.players.filter((p: Player, idx: number) => {
-                        if (!_.isEqual(p, { id: socket.id, name: usernames.get(socket.id) })) {
-                            return p
-                        }
-                    })
-                    val.players = playersFiltered
-                    val.ready = [false, false]
-                    rooms.set(room, val)
+                    val.leave(socket.id, usernames.get(socket.id))
                     socket.to(room).emit("user-leave", val.players)
                     socket.leave(room)
                     console.log(usernames.get(socket.id), "left room", room)
@@ -116,9 +158,7 @@ const socketServer = (httpServer: any) => {
                 socket.join(roomID)
                 console.log(username, id, "joined room", roomID)
                 socket.to(roomID).emit("user-join", username, roomID)
-                room.amount++
-                room.players.push({ id: id, name: username })
-                rooms.set(roomID, room)
+                room.join(id, username)
                 callback("ok")
 
             } else if (room.amount >= 2) { // room is full
@@ -139,11 +179,7 @@ const socketServer = (httpServer: any) => {
             while (rooms.get(tempID) !== undefined) {
                 tempID = getRandID();
             }
-            rooms.set(tempID, {
-                amount: 0,
-                players: [],
-                ready: [false, false]
-            })
+            rooms.set(tempID, new Room())
             callback(tempID)
             console.log("Created room", tempID)
         })
@@ -160,29 +196,42 @@ const socketServer = (httpServer: any) => {
             let room = rooms.get(roomID)
             let arrID = room.players.findIndex((ele: Player) => _.isEqual(ele, { id: socket.id, name: usernames.get(socket.id) }))
             if (arrID !== undefined) {
-                room.ready[arrID] = !room.ready[arrID]
-                rooms.set(roomID, room)
-                socket.to(roomID).emit("ready", room.ready)
-                callback(room.ready)
+                room.ready(socket.id, usernames.get(socket.id))
+                socket.to(roomID).emit("ready", room.ready_)
+                callback(room.ready_)
             }
         })
 
         socket.on("startup", (roomID: Number, callback: Function) => {
             let room = rooms.get(roomID)
             let side = Math.floor(Math.random() * 2)
-            console.log(roomID, "preparing to start")
-            socket.to(roomID).emit("startup", (room.ready[0] && room.ready[1]), !side)
-            callback(room.ready[0] && room.ready[1], !!side)
+            console.log(roomID, "preparing to start", !!side)
+            socket.to(roomID).emit("startup", room.getReady, !side)
+            callback([room.getReady, !!side])
         })
 
         socket.on("start", (roomID: Number, callback: Function) => {
             let room = rooms.get(roomID)
-            if (room.amount === 2 && room.players.length === 2 && room.ready[0] && room.ready[1]) {
+            if (room.amount === 2 && room.players.length === 2 && room.getReady) {
                 console.log(roomID, "starting")
                 callback("ok")
             } else {
-                console.log(roomID, socket.id, "ERROR", room.amount === 2, room.players.length === 2, room.ready[0], room.ready[1])
+                console.log(roomID, socket.id, "ERROR", room.amount === 2, room.players.length === 2, room.getReady)
                 callback(["error", room])
+            }
+        })
+
+        socket.on("place", (roomID: Number, side: String, cords: Array<number>, callback: Function) => {
+            let room = rooms.get(roomID)
+            let col: number, row: number
+            [col, row] = cords
+            if (room.board[col][row] === '') {
+                room.place(side, col, row)
+                callback([room.board, room.turn])
+                socket.to(roomID).emit("placed", [room.board, room.turn])
+                console.log(roomID, side, cords)
+            } else {
+                callback([room.board, room.turn])
             }
         })
 

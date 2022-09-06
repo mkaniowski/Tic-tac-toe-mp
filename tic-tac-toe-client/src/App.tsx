@@ -39,6 +39,8 @@ function App(): JSX.Element {
   const [creator, setCreator] = React.useState(false)
   const [showCountdown, setShowCountdown] = useState(false)
   const [turn, setTurn] = useState(false)
+  const [side, setSide] = useState('')
+  const [board, setBoard] = useState([['', '', ''], ['', '', ''], ['', '', '']])
 
   React.useEffect(() => {
 
@@ -61,6 +63,8 @@ function App(): JSX.Element {
       })
       setReady([false, false])
       setCreator(false)
+      setShowCountdown(false)
+      setBoard([['', '', ''], ['', '', ''], ['', '', '']])
       console.log('Disconnected from server')
     });
 
@@ -91,6 +95,21 @@ function App(): JSX.Element {
     socket.on('startup', (sw: boolean, side: boolean) => {
       setShowCountdown(sw)
       setTurn(side)
+      if (side === true) {
+        setSide('o')
+      } else {
+        setSide('x')
+      }
+    })
+
+    socket.on("placed", (res: any) => {
+      setBoard(res[0])
+      if (res[1] == side) {
+        setTurn(true)
+      } else {
+        setTurn(false)
+      }
+      console.log(res)
     })
 
     // socket.onAny((event: any, ...args: any) => {
@@ -104,7 +123,7 @@ function App(): JSX.Element {
   return (
     <>
       <GlobalCSS />
-      <WelcomeScr socket={ socket } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } ready={ ready } setReady={ setReady } setCreator={ setCreator } creator={ creator } setShowCountdown={ setShowCountdown } showCountdown={ showCountdown } setTurn={ setTurn } turn={ turn } />
+      <WelcomeScr socket={ socket } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } ready={ ready } setReady={ setReady } setCreator={ setCreator } creator={ creator } setShowCountdown={ setShowCountdown } showCountdown={ showCountdown } setTurn={ setTurn } turn={ turn } board={ board } setBoard={ setBoard } side={ side } setSide={ setSide } />
       <ToastContainer
         position="bottom-left"
         autoClose={ 5000 }

@@ -8,8 +8,8 @@ import GameBoard from "./GameBoard";
 
 const WelcomeScr = (props: any): JSX.Element => {
 
-    const [menu, setMenu] = React.useState(4)
-    const [room, setRoom] = React.useState(123456)
+    const [menu, setMenu] = React.useState(0)
+    const [room, setRoom] = React.useState(0)
 
     const formikJoin = useFormik({
         initialValues: {
@@ -109,8 +109,13 @@ const WelcomeScr = (props: any): JSX.Element => {
                                 { props.ready[0] && props.ready[1] && props.creator ?
                                     <Btn onClick={ () => {
                                         props.socket.emit("startup", room, (res: any) => {
-                                            props.setShowCountdown(res)
-                                            props.setTurn(res)
+                                            props.setShowCountdown(res[0])
+                                            props.setTurn(res[1])
+                                            if (res[1] === true) {
+                                                props.setSide('o')
+                                            } else {
+                                                props.setSide('x')
+                                            }
                                         })
                                     } }>Start</Btn>
                                     : null }</span> }
@@ -118,7 +123,7 @@ const WelcomeScr = (props: any): JSX.Element => {
                     ) : null
             }
             {
-                menu === 4 ? (<GameBoard socket={ props.socket } room={ room } turn={ props.turn } setMenu={ setMenu } players={ props.players } />) : null
+                menu === 4 ? (<GameBoard socket={ props.socket } room={ room } turn={ props.turn } setTurn={ props.setTurn } setMenu={ setMenu } players={ props.players } board={ props.board } setBoard={ props.setBoard } side={ props.side } creator={ props.creator } />) : null
             }
             {/* <button onClick={ () => props.socket.emit("get-rooms") }>Get Rooms</button> */ }
             {/* <button onClick={ () => { toast("test") } }>Notifi</button> */ }

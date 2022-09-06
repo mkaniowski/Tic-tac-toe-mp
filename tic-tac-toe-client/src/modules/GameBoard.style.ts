@@ -37,11 +37,18 @@ export const Board = styled.table`
     text-align: center;
     border-collapse: collapse;
     border-style: hidden;
+    table-layout: fixed;
     
     td, th {
         border: 3px solid #FFFFFF;
         padding: 2px 2px;
         cursor: pointer;
+        width: calc(25vw / 3);
+        height: calc(25vw / 3);
+        svg {
+            width: 75%;
+            height: 75%;
+        }
     }
     
     td {

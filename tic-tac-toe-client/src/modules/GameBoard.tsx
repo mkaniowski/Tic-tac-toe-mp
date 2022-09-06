@@ -1,42 +1,67 @@
 import { Board, Wrapper, PlayerCol, PlayerName, MidCol, SideIndicator, Circle, Cross } from "./GameBoard.style"
 import { Bar } from "./ProgressBar.style"
 import ProgressBar from "./ProgressBar"
-import { useCountdown } from "../services/useCountdown"
 import React from "react"
 
 const GameBoard = (props: any) => {
 
     const [sw1, setSw1] = React.useState(false)
     const [sw2, setSw2] = React.useState(false)
+    const [signs, setSigns] = React.useState(['', ''])
 
-    const Rows = () => {
-        for (var row = 0; row < 3; row++) {
-            return (<tr>
-                { ['a', 'b', 'c'].map(element => {
-                    return <td key={ element }>{ element }</td>;
-                }) }
-            </tr>)
+    React.useEffect(() => {
+        if (props.creator === true) {
+            if (props.side == 'o') {
+                setSigns(['o', 'x'])
+            } else {
+                setSigns(['x', 'o'])
+            }
+        } else {
+            if (props.side == 'o') {
+                setSigns(['x', 'o'])
+            } else {
+                setSigns(['o', 'x'])
+            }
+        }
+    }, [])
 
+    const xoHandler = (row: number, col: number) => {
+        console.log(props.side, "try to place", row, col)
+        if (props.board[row][col] == '') {
+            // let cpy = [...props.board]
+            // cpy[row][col] = props.side
+            // cpy[row][col] = 'x'
+            // props.setBoard(cpy)
+            props.socket.emit("place", props.room, props.side, [row, col], (res: Array<any>) => {
+                props.setBoard(res[0])
+                if (res[1] == props.side) {
+                    props.setTurn(true)
+                } else {
+                    props.setTurn(false)
+                }
+                console.log(res)
+            })
+            // console.log(props.board)
         }
     }
-
 
     return (
         <Wrapper>
             <PlayerCol>
                 <PlayerName>{ props.players.player1 }</PlayerName>
                 { sw1 ? <ProgressBar /> : <Bar progress={ 100 }><div></div></Bar> }
-                {/* <ProgressBar progress={ useCountdown(10000) * 10 } /> */ }
                 {/* <button onClick={ () => setSw1(!sw1) }>ON</button> */ }
-                <SideIndicator><Circle /></SideIndicator>
+                <SideIndicator>
+                    { signs[0] == 'o' ? <Circle /> : <Cross /> }
+                </SideIndicator>
             </PlayerCol>
             <MidCol>
                 <span>6-1</span>
                 <Board>
                     <tbody>
-                        { ['1', '2', '3'].map(row => {
-                            return <tr key={ row }>{ ['a', 'b', 'c'].map(col => {
-                                return <td key={ col } onClick={ () => console.log(row, col) }>{ [row, col] }</td>;
+                        { [0, 1, 2].map(row => {
+                            return <tr key={ row }>{ [0, 1, 2].map(col => {
+                                return <td key={ col } onClick={ () => xoHandler(row, col) }>{ props.board[row][col] == 'o' ? <Circle /> : null }{ props.board[row][col] == 'x' ? <Cross /> : null }</td>;
                             }) }</tr>;
                         }) }
                     </tbody>
@@ -46,7 +71,9 @@ const GameBoard = (props: any) => {
                 <PlayerName>{ props.players.player2 }</PlayerName>
                 { sw2 ? <ProgressBar /> : <Bar progress={ 100 }><div></div></Bar> }
                 {/* <button onClick={ () => setSw2(!sw2) }>ON</button> */ }
-                <SideIndicator><Cross /></SideIndicator>
+                <SideIndicator>
+                    { signs[1] == 'o' ? <Circle /> : <Cross /> }
+                </SideIndicator>
             </PlayerCol>
         </Wrapper>
     )
