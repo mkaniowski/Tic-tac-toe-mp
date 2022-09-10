@@ -14,6 +14,7 @@ const Countdown = (props: any): any => {
         props.socket.disconnect()
         props.setMenu(0)
     } else if ((countdown === -1) && (props.ready[0] && props.ready[1])) {
+        console.log("Starting")
         props.socket.emit("start", props.room, (res: any) => {
             if (res === "ok") {
                 props.setMenu(4)

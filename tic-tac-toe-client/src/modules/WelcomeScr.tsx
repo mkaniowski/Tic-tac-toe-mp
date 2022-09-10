@@ -123,7 +123,7 @@ const WelcomeScr = (props: any): JSX.Element => {
                     ) : null
             }
             {
-                menu === 4 ? (<GameBoard socket={ props.socket } room={ room } turn={ props.turn } setTurn={ props.setTurn } setMenu={ setMenu } players={ props.players } board={ props.board } setBoard={ props.setBoard } side={ props.side } creator={ props.creator } />) : null
+                menu === 4 ? (<GameBoard socket={ props.socket } room={ room } turn={ props.turn } setTurn={ props.setTurn } setMenu={ setMenu } players={ props.players } board={ props.board } setBoard={ props.setBoard } side={ props.side } creator={ props.creator } winner={ props.winner } setWinner={ props.setWinner } score={ props.score } setScore={ props.setScore } setReady={ props.setReady } setShowCountdown={ props.setShowCountdown } />) : null
             }
             {/* <button onClick={ () => props.socket.emit("get-rooms") }>Get Rooms</button> */ }
             {/* <button onClick={ () => { toast("test") } }>Notifi</button> */ }

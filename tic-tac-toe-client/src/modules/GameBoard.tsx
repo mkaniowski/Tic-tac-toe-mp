@@ -2,12 +2,16 @@ import { Board, Wrapper, PlayerCol, PlayerName, MidCol, SideIndicator, Circle, C
 import { Bar } from "./ProgressBar.style"
 import ProgressBar from "./ProgressBar"
 import React from "react"
+import EndScreen from "./EndScreen"
 
 const GameBoard = (props: any) => {
 
     const [sw1, setSw1] = React.useState(false)
     const [sw2, setSw2] = React.useState(false)
     const [signs, setSigns] = React.useState(['', ''])
+    const [winScr, setWinScr] = React.useState(false)
+    const [loseScr, setLoseScr] = React.useState(false)
+    const [drawScr, setDrawScr] = React.useState(false)
 
     React.useEffect(() => {
         if (props.creator === true) {
@@ -25,8 +29,36 @@ const GameBoard = (props: any) => {
         }
     }, [])
 
+    React.useEffect(() => {
+        if (props.winner === props.side) {
+            console.log("winner", props.winner)
+            setWinScr(true)
+        } else if (props.winner != '' && props.winner === "d") {
+            console.log("draw")
+            setDrawScr(true)
+        } else if (props.winner != '' && props.winner != props.side) {
+            console.log("looser", props.winner)
+            setLoseScr(true)
+        }
+
+        if (props.winner != '') {
+            props.socket.emit('getScore', props.room, (res: Array<number>) => props.setScore(res))
+            setTimeout(() => {
+                setWinScr(false)
+                setLoseScr(false)
+                setDrawScr(false)
+                props.setWinner('')
+                props.setReady([false, false])
+                props.setBoard([['', '', ''], ['', '', ''], ['', '', '']])
+                props.setShowCountdown(false)
+                props.setMenu(3)
+            }, 4000);
+        }
+
+    }, [props.winner])
+
     const xoHandler = (row: number, col: number) => {
-        console.log(props.side, "try to place", row, col)
+        // console.log(props.side, "try to place", row, col)
         if (props.board[row][col] == '') {
             // let cpy = [...props.board]
             // cpy[row][col] = props.side
@@ -39,7 +71,8 @@ const GameBoard = (props: any) => {
                 } else {
                     props.setTurn(false)
                 }
-                console.log(res)
+                props.setWinner(res[2])
+                // console.log(res)
             })
             // console.log(props.board)
         }
@@ -47,6 +80,9 @@ const GameBoard = (props: any) => {
 
     return (
         <Wrapper>
+            { winScr ? <EndScreen end={ "Win!" } /> : null }
+            { loseScr ? <EndScreen end={ "Lose!" } /> : null }
+            { drawScr ? <EndScreen end={ "Draw!" } /> : null }
             <PlayerCol>
                 <PlayerName>{ props.players.player1 }</PlayerName>
                 { sw1 ? <ProgressBar /> : <Bar progress={ 100 }><div></div></Bar> }
@@ -56,7 +92,7 @@ const GameBoard = (props: any) => {
                 </SideIndicator>
             </PlayerCol>
             <MidCol>
-                <span>6-1</span>
+                <span>{ props.score[0] }-{ props.score[1] }</span>
                 <Board>
                     <tbody>
                         { [0, 1, 2].map(row => {

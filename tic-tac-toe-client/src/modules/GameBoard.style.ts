@@ -67,4 +67,3 @@ export const Circle = styled(FiCircle)`
 
 export const Cross = styled(FiX)`
 `
-

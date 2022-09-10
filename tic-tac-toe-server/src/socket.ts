@@ -1,6 +1,7 @@
 import { Server } from "socket.io"
 import { instrument } from "@socket.io/admin-ui";
 import _ from "lodash"
+import cond from "./cond"
 require('dotenv').config()
 
 interface ServerToClientEvents {
@@ -34,6 +35,8 @@ class Room {
     board: Array<Array<String>>
     score: Array<number>
     turn: String
+    counter: number
+    signs: Array<string>
 
 
     constructor() {
@@ -43,6 +46,8 @@ class Room {
         this.board = [['', '', ''], ['', '', ''], ['', '', '']]
         this.turn = 'o'
         this.score = [0, 0]
+        this.counter = 0
+        this.signs = ['', '']
     }
 
     join(id: String, name: String) {
@@ -78,8 +83,23 @@ class Room {
         if (this.turn === sign) {
             this.board[row][col] = sign
             if (sign === 'o') { this.turn = 'x' } else { this.turn = 'o' }
+            this.counter++
         }
+    }
 
+    win(idx: number) {
+        this.score[idx]++
+    }
+
+    reset() {
+        this.board = [['', '', ''], ['', '', ''], ['', '', '']]
+        this.ready_ = [false, false]
+        this.turn = 'o'
+        this.counter = 0
+    }
+
+    get getScore() {
+        return this.score
     }
 }
 
@@ -205,6 +225,11 @@ const socketServer = (httpServer: any) => {
         socket.on("startup", (roomID: Number, callback: Function) => {
             let room = rooms.get(roomID)
             let side = Math.floor(Math.random() * 2)
+            if (!!side) {
+                room.signs = ['o', 'x']
+            } else {
+                room.signs = ['x', 'o']
+            }
             console.log(roomID, "preparing to start", !!side)
             socket.to(roomID).emit("startup", room.getReady, !side)
             callback([room.getReady, !!side])
@@ -227,12 +252,34 @@ const socketServer = (httpServer: any) => {
             [col, row] = cords
             if (room.board[col][row] === '') {
                 room.place(side, col, row)
-                callback([room.board, room.turn])
+                // callback([room.board, room.turn])
                 socket.to(roomID).emit("placed", [room.board, room.turn])
-                console.log(roomID, side, cords)
-            } else {
-                callback([room.board, room.turn])
+                // console.log(roomID, side, cords)
             }
+
+            if (room.counter === 9) {
+                callback([room.board, room.turn, "d"])
+                socket.to(roomID).emit("winner", "d")
+                room.reset()
+                console.log("Draw")
+            }
+
+            let check = cond(room.board)
+
+            if (check[0]) {
+                room.win(room.signs.indexOf(check[1]))
+                socket.to(roomID).emit("winner", check[1])
+                room.reset()
+                console.log("winner", check[1])
+            }
+
+            callback([room.board, room.turn, check[1]])
+
+        })
+
+        socket.on("getScore", (roomID: number, callback: Function) => {
+            let room = rooms.get(roomID)
+            callback(room.getScore)
         })
 
         /**
