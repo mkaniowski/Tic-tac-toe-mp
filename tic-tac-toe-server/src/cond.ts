@@ -1,8 +1,8 @@
-const cond = (board: Array<Array<string>>): Array<any> => {
+const cond = (board: Array<Array<string>>): String => {
     // rows
     for (let i = 0; i < board.length; i++) {
         if (board[i].every((val, i, arr) => { return (val !== "" && val === arr[0]) })) {
-            return [true, board[i][0]]
+            return board[i][0]
         }
     }
 
@@ -12,20 +12,20 @@ const cond = (board: Array<Array<string>>): Array<any> => {
             cols.push(board[row][col])
         }
         if (cols.every((val, i, arr) => { return (val !== "" && val === arr[0]) })) {
-            return [true, board[0][col]]
+            return board[0][col]
         }
     }
 
     if (board[0][0] != "" && board[0][0] === board[1][1] && board[1][1] === board[2][2]) {
-        return [true, board[1][1]]
+        return board[1][1]
     }
 
     if (board[0][2] != "" && board[0][2] === board[1][1] && board[1][1] === board[2][0]) {
-        return [true, board[1][1]]
+        return board[1][1]
     }
 
 
-    return [false, '']
+    return ''
 }
 
 export default cond

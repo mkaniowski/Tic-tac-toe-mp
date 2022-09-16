@@ -1,5 +1,6 @@
 import { Server } from "socket.io"
 import { instrument } from "@socket.io/admin-ui";
+import { Room } from "./room";
 import _ from "lodash"
 import cond from "./cond"
 require('dotenv').config()
@@ -22,85 +23,9 @@ interface SocketData {
     name: string;
     age: number;
 }
-
 type Player = {
     id: String;
     name: String;
-}
-
-class Room {
-    amount: number;
-    players: Array<Player>
-    ready_: Array<boolean>
-    board: Array<Array<String>>
-    score: Array<number>
-    turn: String
-    counter: number
-    signs: Array<string>
-
-
-    constructor() {
-        this.amount = 0
-        this.players = []
-        this.ready_ = [false, false]
-        this.board = [['', '', ''], ['', '', ''], ['', '', '']]
-        this.turn = 'o'
-        this.score = [0, 0]
-        this.counter = 0
-        this.signs = ['', '']
-    }
-
-    join(id: String, name: String) {
-        if (this.amount <= 1) {
-            this.amount++
-            this.players.push({ id: id, name: name })
-        }
-    }
-
-    leave(id: String, name: String) {
-        this.ready_ = [false, false]
-        this.amount--
-        this.players = this.players.filter((p: Player, idx: number) => {
-            if (!_.isEqual(p, { id: id, name: name })) {
-                return p
-            }
-        })
-        console.log("leave", this.players)
-    }
-
-    ready(id: String, name: String) {
-        let arrID = this.players?.findIndex((ele: Player) => _.isEqual(ele, { id: id, name: name }))
-        if (arrID !== undefined) {
-            this.ready_[arrID] = !this.ready_[arrID]
-        }
-    }
-
-    get getReady() {
-        return this.ready_[0] && this.ready_[1]
-    }
-
-    place(sign: String, row: number, col: number) {
-        if (this.turn === sign) {
-            this.board[row][col] = sign
-            if (sign === 'o') { this.turn = 'x' } else { this.turn = 'o' }
-            this.counter++
-        }
-    }
-
-    win(idx: number) {
-        this.score[idx]++
-    }
-
-    reset() {
-        this.board = [['', '', ''], ['', '', ''], ['', '', '']]
-        this.ready_ = [false, false]
-        this.turn = 'o'
-        this.counter = 0
-    }
-
-    get getScore() {
-        return this.score
-    }
 }
 
 
@@ -199,9 +124,10 @@ const socketServer = (httpServer: any) => {
             while (rooms.get(tempID) !== undefined) {
                 tempID = getRandID();
             }
-            rooms.set(tempID, new Room())
+            rooms.set(tempID, new Room(tempID))
             callback(tempID)
             console.log("Created room", tempID)
+
         })
 
         socket.on("get-users-room", (roomID: any, username: String, callback: Function) => {
@@ -224,22 +150,19 @@ const socketServer = (httpServer: any) => {
 
         socket.on("startup", (roomID: Number, callback: Function) => {
             let room = rooms.get(roomID)
-            let side = Math.floor(Math.random() * 2)
-            if (!!side) {
-                room.signs = ['o', 'x']
-            } else {
-                room.signs = ['x', 'o']
-            }
-            console.log(roomID, "preparing to start", !!side)
-            socket.to(roomID).emit("startup", room.getReady, !side)
-            callback([room.getReady, !!side])
+            room.startup()
+            console.log(roomID, "preparing to start", room.signs)
+            socket.to(roomID).emit("startup", room.signs[1], room.signs)
+            callback([room.signs[0], room.signs])
         })
 
         socket.on("start", (roomID: Number, callback: Function) => {
             let room = rooms.get(roomID)
             if (room.amount === 2 && room.players.length === 2 && room.getReady) {
                 console.log(roomID, "starting")
+                room.start()
                 callback("ok")
+                room.check(socket)
             } else {
                 console.log(roomID, socket.id, "ERROR", room.amount === 2, room.players.length === 2, room.getReady)
                 callback(["error", room])
@@ -252,28 +175,29 @@ const socketServer = (httpServer: any) => {
             [col, row] = cords
             if (room.board[col][row] === '') {
                 room.place(side, col, row)
-                // callback([room.board, room.turn])
                 socket.to(roomID).emit("placed", [room.board, room.turn])
-                // console.log(roomID, side, cords)
+                room.clear()
             }
 
-            if (room.counter === 9) {
+            let winner: String = cond(room.board)
+
+            if (winner != '') {
+                room.win(room.signs.indexOf(winner))
+                socket.to(roomID).emit("winner", winner)
+                room.reset()
+                console.log("winner", winner)
+            }
+
+            if (room.counter === 9 && winner === '') {
                 callback([room.board, room.turn, "d"])
                 socket.to(roomID).emit("winner", "d")
                 room.reset()
                 console.log("Draw")
             }
 
-            let check = cond(room.board)
+            callback([room.board, room.turn, winner])
 
-            if (check[0]) {
-                room.win(room.signs.indexOf(check[1]))
-                socket.to(roomID).emit("winner", check[1])
-                room.reset()
-                console.log("winner", check[1])
-            }
-
-            callback([room.board, room.turn, check[1]])
+            room.check(socket)
 
         })
 

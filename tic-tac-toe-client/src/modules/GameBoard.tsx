@@ -57,6 +57,10 @@ const GameBoard = (props: any) => {
 
     }, [props.winner])
 
+    React.useEffect(() => {
+        console.log(props.turn)
+    }, [props.turn])
+
     const xoHandler = (row: number, col: number) => {
         // console.log(props.side, "try to place", row, col)
         if (props.board[row][col] == '') {
@@ -66,10 +70,12 @@ const GameBoard = (props: any) => {
             // props.setBoard(cpy)
             props.socket.emit("place", props.room, props.side, [row, col], (res: Array<any>) => {
                 props.setBoard(res[0])
-                if (res[1] == props.side) {
-                    props.setTurn(true)
-                } else {
-                    props.setTurn(false)
+                if ((res[1] === props.side && props.creator) || (res[1] != props.side && !props.creator)) {
+                    console.log(1, (res[1] === props.side && props.creator) || (res[1] != props.side && !props.creator), props.side, props.creator)
+                    props.setTurn([true, false])
+                } else if ((res[1] === props.side && !props.creator) || (res[1] != props.side && props.creator)) {
+                    console.log(2, (res[1] === props.side && !props.creator) || (res[1] != props.side && props.creator), props.side, props.creator)
+                    props.setTurn([false, true])
                 }
                 props.setWinner(res[2])
                 // console.log(res)
@@ -85,7 +91,7 @@ const GameBoard = (props: any) => {
             { drawScr ? <EndScreen end={ "Draw!" } /> : null }
             <PlayerCol>
                 <PlayerName>{ props.players.player1 }</PlayerName>
-                { sw1 ? <ProgressBar /> : <Bar progress={ 100 }><div></div></Bar> }
+                { props.turn[0] ? <ProgressBar /> : <Bar progress={ 100 }><div></div></Bar> }
                 {/* <button onClick={ () => setSw1(!sw1) }>ON</button> */ }
                 <SideIndicator>
                     { signs[0] == 'o' ? <Circle /> : <Cross /> }
@@ -98,14 +104,14 @@ const GameBoard = (props: any) => {
                         { [0, 1, 2].map(row => {
                             return <tr key={ row }>{ [0, 1, 2].map(col => {
                                 return <td key={ col } onClick={ () => xoHandler(row, col) }>{ props.board[row][col] == 'o' ? <Circle /> : null }{ props.board[row][col] == 'x' ? <Cross /> : null }</td>;
-                            }) }</tr>;
+                            }) }</tr>
                         }) }
                     </tbody>
                 </Board >
             </MidCol>
             <PlayerCol>
                 <PlayerName>{ props.players.player2 }</PlayerName>
-                { sw2 ? <ProgressBar /> : <Bar progress={ 100 }><div></div></Bar> }
+                { props.turn[1] ? <ProgressBar /> : <Bar progress={ 100 }><div></div></Bar> }
                 {/* <button onClick={ () => setSw2(!sw2) }>ON</button> */ }
                 <SideIndicator>
                     { signs[1] == 'o' ? <Circle /> : <Cross /> }

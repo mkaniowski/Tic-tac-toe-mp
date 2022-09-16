@@ -37,11 +37,12 @@ function App(): JSX.Element {
     const [socket, setSocket]: [Socket, Function] = useState(socketClient)
     const [creator, setCreator] = React.useState(false)
     const [showCountdown, setShowCountdown] = useState(false)
-    const [turn, setTurn] = useState(false)
-    const [side, setSide] = useState('')
+    const [turn, setTurn] = useState([false, false])
+    const [side, setSide] = useState("")
     const [board, setBoard] = useState([['', '', ''], ['', '', ''], ['', '', '']])
     const [winner, setWinner] = useState('')
     const [score, setScore] = useState([0, 0])
+    const [signs, setSigns] = useState(['', ''])
 
     React.useEffect(() => {
 
@@ -73,7 +74,7 @@ function App(): JSX.Element {
             console.log('error')
         });
 
-        socket.on('user-join', (username: string, roomID: Number) => {
+        socket.on('user-join', (username: string) => {
             setPlayers(prev => ({
                 ...prev,
                 player2: username
@@ -93,28 +94,27 @@ function App(): JSX.Element {
             setReady(readyArr)
         })
 
-        socket.on('startup', (sw: boolean, side: boolean) => {
-            setShowCountdown(sw)
-            setTurn(side)
-            if (side === true) {
-                setSide('o')
-            } else {
-                setSide('x')
-            }
+        socket.on('startup', (side_: string, signs_: Array<string>) => {
+            setShowCountdown(true)
+            setSide(side_)
+            setSigns(signs_)
+            setTurn([signs_[0] === 'o', signs_[1] === 'o'])
+            console.log([side_ === signs_[0], side_ === signs_[1]], side_, signs_)
         })
 
         socket.on('winner', (sign: string) => {
             setWinner(sign)
+            setTurn([false, false])
         })
 
         socket.on("placed", (res: any) => {
+            console.log("call", res[1])
             setBoard(res[0])
-            if (res[1] == side) {
-                setTurn(true)
-            } else {
-                setTurn(false)
-            }
-            console.log(res)
+            setTurn([res[1] === signs[0], res[1] === signs[1]])
+        })
+
+        socket.on("tst", (res: any) => {
+            console.log("tst", res)
         })
 
         // socket.onAny((event: any, ...args: any) => {
@@ -123,12 +123,12 @@ function App(): JSX.Element {
         return () => {
             socket.offAny();
         };
-    }, []);
+    }, [signs]);
 
     return (
         <>
             <GlobalCSS />
-            <WelcomeScr socket={ socket } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } ready={ ready } setReady={ setReady } setCreator={ setCreator } creator={ creator } setShowCountdown={ setShowCountdown } showCountdown={ showCountdown } setTurn={ setTurn } turn={ turn } board={ board } setBoard={ setBoard } side={ side } setSide={ setSide } winner={ winner } setWinner={ setWinner } score={ score } setScore={ setScore } />
+            <WelcomeScr socket={ socket } setPlayers={ setPlayers } players={ players } setSocket={ setSocket } ready={ ready } setReady={ setReady } setCreator={ setCreator } creator={ creator } setShowCountdown={ setShowCountdown } showCountdown={ showCountdown } setTurn={ setTurn } turn={ turn } board={ board } setBoard={ setBoard } side={ side } setSide={ setSide } winner={ winner } setWinner={ setWinner } score={ score } setSigns={ setSigns } setScore={ setScore } />
             <ToastContainer
                 position="bottom-left"
                 autoClose={ 5000 }

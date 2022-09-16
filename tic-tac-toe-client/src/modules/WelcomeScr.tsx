@@ -109,13 +109,10 @@ const WelcomeScr = (props: any): JSX.Element => {
                                 { props.ready[0] && props.ready[1] && props.creator ?
                                     <Btn onClick={ () => {
                                         props.socket.emit("startup", room, (res: any) => {
-                                            props.setShowCountdown(res[0])
-                                            props.setTurn(res[1])
-                                            if (res[1] === true) {
-                                                props.setSide('o')
-                                            } else {
-                                                props.setSide('x')
-                                            }
+                                            props.setShowCountdown(true)
+                                            props.setSide(res[0])
+                                            props.setSigns(res[1])
+                                            props.setTurn([res[1][0] === 'o', res[1][1] === 'o'])
                                         })
                                     } }>Start</Btn>
                                     : null }</span> }
@@ -125,10 +122,6 @@ const WelcomeScr = (props: any): JSX.Element => {
             {
                 menu === 4 ? (<GameBoard socket={ props.socket } room={ room } turn={ props.turn } setTurn={ props.setTurn } setMenu={ setMenu } players={ props.players } board={ props.board } setBoard={ props.setBoard } side={ props.side } creator={ props.creator } winner={ props.winner } setWinner={ props.setWinner } score={ props.score } setScore={ props.setScore } setReady={ props.setReady } setShowCountdown={ props.setShowCountdown } />) : null
             }
-            {/* <button onClick={ () => props.socket.emit("get-rooms") }>Get Rooms</button> */ }
-            {/* <button onClick={ () => { toast("test") } }>Notifi</button> */ }
-            {/* <button onClick={ () => { props.socket.emit("get-rooms-obj", (res: any) => console.log(res)) } }>Rooms obj</button> */ }
-            {/* <button onClick={ () => { props.setShowCountdown(true) } }>countdown</button> */ }
         </Wrapper >
     )
 }
