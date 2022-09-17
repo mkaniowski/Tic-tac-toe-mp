@@ -49,7 +49,6 @@ export class Room {
                 return p
             }
         })
-        // console.log("leave", this.players)
     }
 
     ready(id: String, name: String) {
@@ -80,7 +79,6 @@ export class Room {
             this.score[idx]++
             this.singlePoint = false
             this.reset()
-            console.log("score update", this.score)
         }
     }
 
@@ -92,6 +90,7 @@ export class Room {
             this.counter = 0
             this.singlePoint = true
             this.lastDate = new Date()
+            this.clear()
         }
     }
 
@@ -118,7 +117,7 @@ export class Room {
                 socket.emit("winner", this.signs[idx])
                 socket.to(this.roomID).emit("winner", this.signs[idx])
                 console.log(this.roomID, this.players[this.signs.indexOf(this.turn)], idx, "ran out of time!!!")
-            }, 5000)
+            }, 10000)
         }
     }
 

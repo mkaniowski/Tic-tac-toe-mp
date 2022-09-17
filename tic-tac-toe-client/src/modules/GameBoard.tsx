@@ -6,8 +6,6 @@ import EndScreen from "./EndScreen"
 
 const GameBoard = (props: any) => {
 
-    const [sw1, setSw1] = React.useState(false)
-    const [sw2, setSw2] = React.useState(false)
     const [signs, setSigns] = React.useState(['', ''])
     const [winScr, setWinScr] = React.useState(false)
     const [loseScr, setLoseScr] = React.useState(false)
@@ -31,13 +29,10 @@ const GameBoard = (props: any) => {
 
     React.useEffect(() => {
         if (props.winner === props.side) {
-            console.log("winner", props.winner)
             setWinScr(true)
         } else if (props.winner != '' && props.winner === "d") {
-            console.log("draw")
             setDrawScr(true)
         } else if (props.winner != '' && props.winner != props.side) {
-            console.log("looser", props.winner)
             setLoseScr(true)
         }
 
@@ -62,25 +57,16 @@ const GameBoard = (props: any) => {
     }, [props.turn])
 
     const xoHandler = (row: number, col: number) => {
-        // console.log(props.side, "try to place", row, col)
         if (props.board[row][col] == '') {
-            // let cpy = [...props.board]
-            // cpy[row][col] = props.side
-            // cpy[row][col] = 'x'
-            // props.setBoard(cpy)
             props.socket.emit("place", props.room, props.side, [row, col], (res: Array<any>) => {
                 props.setBoard(res[0])
                 if ((res[1] === props.side && props.creator) || (res[1] != props.side && !props.creator)) {
-                    console.log(1, (res[1] === props.side && props.creator) || (res[1] != props.side && !props.creator), props.side, props.creator)
                     props.setTurn([true, false])
                 } else if ((res[1] === props.side && !props.creator) || (res[1] != props.side && props.creator)) {
-                    console.log(2, (res[1] === props.side && !props.creator) || (res[1] != props.side && props.creator), props.side, props.creator)
                     props.setTurn([false, true])
                 }
                 props.setWinner(res[2])
-                // console.log(res)
             })
-            // console.log(props.board)
         }
     }
 
@@ -92,7 +78,6 @@ const GameBoard = (props: any) => {
             <PlayerCol>
                 <PlayerName>{ props.players.player1 }</PlayerName>
                 { props.turn[0] ? <ProgressBar /> : <Bar progress={ 100 }><div></div></Bar> }
-                {/* <button onClick={ () => setSw1(!sw1) }>ON</button> */ }
                 <SideIndicator>
                     { signs[0] == 'o' ? <Circle /> : <Cross /> }
                 </SideIndicator>
@@ -112,7 +97,6 @@ const GameBoard = (props: any) => {
             <PlayerCol>
                 <PlayerName>{ props.players.player2 }</PlayerName>
                 { props.turn[1] ? <ProgressBar /> : <Bar progress={ 100 }><div></div></Bar> }
-                {/* <button onClick={ () => setSw2(!sw2) }>ON</button> */ }
                 <SideIndicator>
                     { signs[1] == 'o' ? <Circle /> : <Cross /> }
                 </SideIndicator>

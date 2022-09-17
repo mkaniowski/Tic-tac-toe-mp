@@ -17,7 +17,6 @@ const WelcomeScr = (props: any): JSX.Element => {
             roomID: 0
         },
         onSubmit: (values) => {
-            console.log("Submiting values (join): ", values)
             joinRoom(props.socket, values.username, values.roomID, setMenu, props.setPlayers, props.setSocket)
             setRoom(values.roomID)
             formikJoin.resetForm()
@@ -29,7 +28,6 @@ const WelcomeScr = (props: any): JSX.Element => {
             username: ''
         },
         onSubmit: (values) => {
-            console.log("Submiting values (create): ", values)
             createRoom(props.socket, values.username, setMenu, setRoom, props.setSocket, props.setCreator)
             props.setPlayers((prev: any) => ({
                 ...prev,
